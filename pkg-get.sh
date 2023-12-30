@@ -14,6 +14,11 @@ usage() {
     exit 1
 }
 
+if [[ -z "$1" ]]; then
+    usage
+    exit 0
+fi
+
 while [ -n "$1" ]; do # while loop starts
     case "$1" in
     -ws)
@@ -47,13 +52,13 @@ if [ -z "$ARCH" ]; then
   esac
 fi
 
-IRRADIUM_VERSION="3.7"
+IRRADIUM_VERSION=${IRRADIUM_VERSION:-"3.7"}
 IRRADIUM_URL="https://dl.irradium.org/irradium/packages/${ARCH}/${IRRADIUM_VERSION}"
 IRRADIUM_CACHE="/var/cache/pkg-get"
 PORTS="/usr/bin/ports"
 DOWNLOAD="/usr/bin/curl"
 SIGNIFY="/usr/bin/signify"
-SIGNIFY_PATH="/home/dev/build/crux-dev/pkg-get"
+SIGNIFY_PATH=${SIGNIFY_PATH:-"/home/dev/build/crux-dev/pkg-get"}
 SIGNIFY_NAME="pkg-get"
 COMPRESSION="gz"
 PORT_SUFFIX=".pkg.tar.${COMPRESSION}"
