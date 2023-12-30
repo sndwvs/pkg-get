@@ -7,7 +7,7 @@ export LANG=C
 usage() {
     echo
     echo "usage: $(basename $0)"
-    echo "       -ws [path]    sign files "
+    echo "       -s [path]    sign files "
     echo "       -u            update packages "
     echo "       -h            displays this message "
     echo
@@ -21,7 +21,7 @@ fi
 
 while [ -n "$1" ]; do # while loop starts
     case "$1" in
-    -ws)
+    -s)
         SIGN_PATH="$2"
         shift
         ;;
