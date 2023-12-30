@@ -36,9 +36,19 @@ while [ -n "$1" ]; do # while loop starts
     shift
 done
 
+MARCH=$( uname -m )
+if [ -z "$ARCH" ]; then
+  case "$MARCH" in
+    i?86)    export ARCH=i586 ;;
+    armv7hl) export ARCH=$MARCH ;;
+    arm*)    export ARCH=arm ;;
+    # Unless $ARCH is already set, use uname -m for all other archs:
+    *)       export ARCH=$MARCH ;;
+  esac
+fi
 
 IRRADIUM_VERSION="3.7"
-IRRADIUM_URL="https://dl.irradium.org/irradium/packages/aarch64/${IRRADIUM_VERSION}"
+IRRADIUM_URL="https://dl.irradium.org/irradium/packages/${ARCH}/${IRRADIUM_VERSION}"
 IRRADIUM_CACHE="/var/cache/pkg-get"
 PORTS="/usr/bin/ports"
 DOWNLOAD="/usr/bin/curl"
@@ -47,6 +57,7 @@ SIGNIFY_PATH="/home/dev/build/crux-dev/pkg-get"
 SIGNIFY_NAME="pkg-get"
 COMPRESSION="gz"
 PORT_SUFFIX=".pkg.tar.${COMPRESSION}"
+PKGADD="/usr/bin/pkgadd"
 
 WORK_DIR=$(mktemp -d)
 
@@ -73,7 +84,8 @@ verify_sign() {
     if [[ -e "${IRRADIUM_CACHE}/${port}/${pkg}.sig" ]]; then
         if [[ ! $($SIGNIFY -p ${SIGNIFY_NAME}.pub -V -x "${IRRADIUM_CACHE}/${port}/${pkg}.sig" -m "${IRRADIUM_CACHE}/${port}/${pkg}" 2>&1 > /dev/null) ]]; then
             echo "Port: ${port}    signature package: ${pkg}    : OK"
-            pkgadd -u "${IRRADIUM_CACHE}/${port}/${pkg}"
+            # update package
+            $PKGADD -u "${IRRADIUM_CACHE}/${port}/${pkg}"
         else
             echo "Port: ${port}    signature package: ${pkg}    : ERROR"
         fi
@@ -120,7 +132,7 @@ downloads() {
     else
         if [[ $($DOWNLOAD -o /dev/null -k --silent -Iw '%{http_code}' ${url}.sig) == "200" ]]; then
             # download package
-            $DOWNLOAD -k -e robots=off --no-clobber ${url}.sig \
+            $DOWNLOAD -k -e robots=off -C --no-clobber ${url}.sig \
                       -o ${IRRADIUM_CACHE}/${port}/${pkg}.sig
         else
             echo "Port: ${port}    remote file missing: ${pkg}.sig"
