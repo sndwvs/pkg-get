@@ -73,6 +73,7 @@ verify_sign() {
     if [[ -e "${IRRADIUM_CACHE}/${port}/${pkg}.sig" ]]; then
         if [[ ! $($SIGNIFY -p ${SIGNIFY_NAME}.pub -V -x "${IRRADIUM_CACHE}/${port}/${pkg}.sig" -m "${IRRADIUM_CACHE}/${port}/${pkg}" 2>&1 > /dev/null) ]]; then
             echo "Port: ${port}    signature package: ${pkg}    : OK"
+            pkgadd -u "${IRRADIUM_CACHE}/${port}/${pkg}"
         else
             echo "Port: ${port}    signature package: ${pkg}    : ERROR"
         fi
@@ -107,8 +108,8 @@ downloads() {
     else
         if [[ $($DOWNLOAD -o /dev/null -k --silent -Iw '%{http_code}' $url) == "200" ]]; then
             # download package
-            $DOWNLOAD -k -e robots=off --no-clobber $url \
-                      -o ${IRRADIUM_CACHE}/${port}/${name}'#'${version}${PORT_SUFFIX}
+            $DOWNLOAD -k -e robots=off -C --no-clobber $url \
+                      -o ${IRRADIUM_CACHE}/${port}/${pkg}
         else
             echo "Port: ${port}    remote file missing: ${pkg}"
         fi
@@ -117,10 +118,10 @@ downloads() {
     if [[ -e "${IRRADIUM_CACHE}/${port}/${pkg}.sig" ]]; then
         echo "Port: ${port}    signature in cache: ${pkg}.sig"
     else
-        if [[ $($DOWNLOAD -o /dev/null -k --silent -Iw '%{http_code}' $url) == "200" ]]; then
+        if [[ $($DOWNLOAD -o /dev/null -k --silent -Iw '%{http_code}' ${url}.sig) == "200" ]]; then
             # download package
-            $DOWNLOAD -k -e robots=off --no-clobber $url \
-                      -o ${IRRADIUM_CACHE}/${port}/${name}'#'${version}${PORT_SUFFIX}
+            $DOWNLOAD -k -e robots=off --no-clobber ${url}.sig \
+                      -o ${IRRADIUM_CACHE}/${port}/${pkg}.sig
         else
             echo "Port: ${port}    remote file missing: ${pkg}.sig"
         fi
@@ -133,7 +134,7 @@ prepare_ports() {
     while read -r line; do
         port=$(echo $line | cut -d ' ' -f1)
         name=$(echo $line | cut -d ' ' -f2)
-        version=$(echo $line | cut -d ' ' -f4)
+        version=$(echo $line | cut -d ' ' -f3)
         if [[ $type == "download" ]]; then
             downloads ${port##*-} $name $version
         elif [[ $type == "verify" ]]; then
