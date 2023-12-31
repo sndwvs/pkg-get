@@ -58,7 +58,7 @@ IRRADIUM_CACHE="/var/cache/pkg-get"
 PORTS="/usr/bin/ports"
 DOWNLOAD="/usr/bin/curl"
 SIGNIFY="/usr/bin/signify"
-SIGNIFY_PATH=${SIGNIFY_PATH:-"/home/dev/build/crux-dev/pkg-get"}
+SIGNIFY_PATH=${SIGNIFY_PATH:-"/etc/pkg-get"}
 SIGNIFY_NAME="pkg-get"
 COMPRESSION="gz"
 PORT_SUFFIX=".pkg.tar.${COMPRESSION}"
@@ -87,26 +87,27 @@ verify_sign() {
     local pkg="$2"
 
     if [[ -e "${IRRADIUM_CACHE}/${port}/${pkg}.sig" ]]; then
-        if [[ ! $($SIGNIFY -p ${SIGNIFY_NAME}.pub -V -x "${IRRADIUM_CACHE}/${port}/${pkg}.sig" -m "${IRRADIUM_CACHE}/${port}/${pkg}" 2>&1 > /dev/null) ]]; then
-            echo "Port: ${port}    signature package: ${pkg}    : OK"
+        if [[ ! $($SIGNIFY -p "${SIGNIFY_PATH}/${SIGNIFY_NAME}.pub" -V -x "${IRRADIUM_CACHE}/${port}/${pkg}.sig" -m "${IRRADIUM_CACHE}/${port}/${pkg}" 2>&1 > /dev/null) ]]; then
+            echo "OK:  port: ${port}    signature package: ${pkg}"
             # update package
-            $PKGADD -u "${IRRADIUM_CACHE}/${port}/${pkg}"
+            local pkgadd=$($PKGADD -u "${IRRADIUM_CACHE}/${port}/${pkg}")
+            if [[ -z $pkgadd ]]; then
+                echo "OK:  port: ${port}    update package: ${pkg}"
+            else
+                echo "ERROR:  port: ${port}    update package: ${pkg}"
+            fi
         else
-            echo "Port: ${port}    signature package: ${pkg}    : ERROR"
+            echo "ERROR:  port: ${port}    signature package: ${pkg}"
         fi
     else
-        echo "Port: ${port}    signature missing: ${pkg}.sig"
+        echo "ERROR:  port: ${port}    signature missing: ${pkg}.sig"
     fi
 }
 
 sign_files() {
     local path="$1"
 
-    find $path -iname "*${PORT_SUFFIX}" -exec $SIGNIFY -s ${SIGNIFY_NAME}.sec -S -m "{}" -x "{}.sig" \;
-
-#    if [[ ! -e ${file}.sig ]]; then
-#        $SIGNIFY -s ${SIGNIFY_NAME}.sec -S -x "${IRRADIUM_CACHE}/${port}/${pkg}.sig" -m "${IRRADIUM_CACHE}/${port}/${pkg}"
-#    fi
+    find $path -iname "*${PORT_SUFFIX}" -exec $SIGNIFY -s "${SIGNIFY_PATH}/${SIGNIFY_NAME}.sec" -S -m "{}" -x "{}.sig" \;
 }
 
 downloads() {
@@ -125,10 +126,10 @@ downloads() {
     else
         if [[ $($DOWNLOAD -o /dev/null -k --silent -Iw '%{http_code}' $url) == "200" ]]; then
             # download package
-            $DOWNLOAD -k -e robots=off -C --no-clobber $url \
+            $DOWNLOAD -k -e robots=off -C - --no-clobber $url \
                       -o ${IRRADIUM_CACHE}/${port}/${pkg}
         else
-            echo "Port: ${port}    remote file missing: ${pkg}"
+            echo "ERROR:  port: ${port}    remote file missing: ${pkg}"
         fi
     fi
 
@@ -137,10 +138,10 @@ downloads() {
     else
         if [[ $($DOWNLOAD -o /dev/null -k --silent -Iw '%{http_code}' ${url}.sig) == "200" ]]; then
             # download package
-            $DOWNLOAD -k -e robots=off -C --no-clobber ${url}.sig \
+            $DOWNLOAD -k -e robots=off -C - --no-clobber ${url}.sig \
                       -o ${IRRADIUM_CACHE}/${port}/${pkg}.sig
         else
-            echo "Port: ${port}    remote file missing: ${pkg}.sig"
+            echo "ERROR:  port: ${port}    remote file missing: ${pkg}.sig"
         fi
     fi
 }
