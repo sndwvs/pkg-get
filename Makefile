@@ -1,7 +1,7 @@
 
 DESTDIR	 =
 BINDIR	 = /usr/bin
-MANDIR	 = /usr/man
+MANDIR	 = /usr/share/man
 ETCDIR	 = /etc/pkg-get
 CACHEDIR = /var/cache/pkg-get
 
