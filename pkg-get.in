@@ -41,7 +41,26 @@ message() {
 }
 
 check_for_updates() {
-    $PORTS -d | sed -n '2,$p' > $WORK_DIR/ports.diff
+    readarray -t ports_temp < <($PORTS -d | sed -n '2,$p')
+
+    for port_temp in "${ports_temp[@]}";do
+        port=$(echo $port_temp | cut -d ' ' -f1)
+        package=$(echo $port_temp | cut -d ' ' -f2)
+        for port_list in $(cat /etc/prt-get.conf | grep ^prtdir | cut -d ' ' -f2); do
+            port_sort=$(echo $port_list | rev | cut -d '/' -f1 | rev)
+            # checking packets by port hierarchy
+            if [[ -e "$port_list/$package/Pkgfile" && $port_sort != $port ]]; then
+                echo "NO: " $port_sort ${port} ${package}
+                break
+            elif [[ -e "$port_list/$package/Pkgfile" && $port_sort == $port ]]; then
+                echo "YES: " $port_sort ${port} ${package}
+                ports_diff+=("$port_temp")
+            fi
+        done
+    done
+
+    # recording checked packages
+    printf "%s\n" "${ports_diff[@]}" > $WORK_DIR/ports.diff
 }
 
 verify_sign() {
