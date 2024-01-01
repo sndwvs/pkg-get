@@ -201,10 +201,8 @@ parse_options() {
             exit 1
             ;;
          *)
-            OPT_COLLECTIONS="$OPT_COLLECTIONS $OPT"
-            ;;
+            OPT_COLLECTIONS="$OPT_COLLECTIONS $OPT" ;;
         esac
-        shift
     done
 }
 
@@ -219,17 +217,17 @@ main() {
     [[ $EUID != 0 ]] && echo -e "\nThis script must be run with root privileges\n" && exit 1
 
 
-    if [[ $OPT_MODE = "sign" && ! -z $OPT_COLLECTIONS && -d $OPT_COLLECTIONS ]]; then
-        sign_files $OPT_COLLECTIONS
+    if [[ $OPT_MODE == "sign" && ( ! -z $OPT_COLLECTIONS && -d ${OPT_COLLECTIONS/[[:space:]]/} ) ]]; then
+        sign_files ${OPT_COLLECTIONS/[[:space:]]/}
     fi
 
-    if [[ $OPT_MODE = "update" ]]; then
+    if [[ $OPT_MODE == "update" ]]; then
         check_for_updates
         prepare_ports "download"
         prepare_ports "verify"
     fi
 
-    if [[ $OPT_MODE =  "cleaaring_cache" ]]; then
+    if [[ $OPT_MODE == "cleaaring_cache" ]]; then
         claering_cache
     fi
 
