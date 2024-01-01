@@ -173,36 +173,35 @@ usage() {
     echo "   -v, --version       print version and exit"
     echo "   -h, --help          print help and exit"
     echo
-    exit 1
 }
 
 parse_options() {
+    OPT_MODE=""
+    OPT_COLLECTIONS=""
 
     for OPT in "$@"; do
         case "$OPT" in
         -s|--sign)
-
-            SIGN_PATH="$2"
-            shift
-            ;;
+            OPT_MODE="sign" ;;
         -u|--update)
-            UPDATE="yes"
-            shift
-            ;;
+            OPT_MODE="update" ;;
         -c|--clear)
-            CLEARING_CACHE="yes"
-            shift
-            ;;
+            OPT_MODE="cleaaring_cache" ;;
         -v|--version)
             echo "$COMMAND $VERSION"
+            exit 0
             ;;
-        -h|--help) usage
+        -h|--help)
+            usage
+            exit 0
             ;;
-        --)
-            shift # The double dash makes them parameters
-            break
+        -*)
+            echo && echo "$COMMAND: invalid option $OPT"
+            usage
+            exit 1
             ;;
-         *) usage
+         *)
+            OPT_COLLECTIONS="$OPT_COLLECTIONS $OPT"
             ;;
         esac
         shift
@@ -220,17 +219,17 @@ main() {
     [[ $EUID != 0 ]] && echo -e "\nThis script must be run with root privileges\n" && exit 1
 
 
-    if [[ ! -z $SIGN_PATH && -d $SIGN_PATH ]]; then
-        sign_files $SIGN_PATH
+    if [[ $OPT_MODE = "sign" && ! -z $OPT_COLLECTIONS && -d $OPT_COLLECTIONS ]]; then
+        sign_files $OPT_COLLECTIONS
     fi
 
-    if [[ ! -z $UPDATE ]]; then
+    if [[ $OPT_MODE = "update" ]]; then
         check_for_updates
         prepare_ports "download"
         prepare_ports "verify"
     fi
 
-    if [[ ! -z $CLEARING_CACHE ]]; then
+    if [[ $OPT_MODE =  "cleaaring_cache" ]]; then
         claering_cache
     fi
 
