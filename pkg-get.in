@@ -140,11 +140,13 @@ cleaning() {
 
 usage() {
     echo
-    echo "usage: $COMMAND"
-    echo "       -s [path]    sign files "
-    echo "       -u            update packages "
-    echo "       -c            clearing cache "
-    echo "       -h            displays this message "
+    echo "usage: $COMMAND [options]"
+    echo "options:"
+    echo "   -s, --sign [path]   sign files"
+    echo "   -u, --update        update packages"
+    echo "   -c, --clear         clearing cache"
+    echo "   -v, --version       print version and exit"
+    echo "   -h, --help          print help and exit"
     echo
     exit 1
 }
@@ -153,25 +155,23 @@ parse_options() {
 
     for OPT in "$@"; do
         case "$OPT" in
-        -s)
+        -s|--sign)
 
             SIGN_PATH="$2"
-            echo $SIGN_PATH
-            exit 1
             shift
             ;;
-        -u)
+        -u|--update)
             UPDATE="yes"
             shift
             ;;
-        -c)
+        -c|--clear)
             CLEARING_CACHE="yes"
             shift
             ;;
         -v|--version)
             echo "$COMMAND $VERSION"
             ;;
-        -h) usage
+        -h|--help) usage
             ;;
         --)
             shift # The double dash makes them parameters
@@ -187,8 +187,7 @@ parse_options() {
 main() {
     parse_options "$@"
 
-
-    if [[ -z "$1" ]]; then
+    if [[ -z "$@" ]]; then
         usage
         exit 0
     fi
