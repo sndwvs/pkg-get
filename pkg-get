@@ -2,50 +2,6 @@
 
 export LANG=C
 
-[[ $EUID != 0 ]] && echo -e "\nThis script must be run with root privileges\n" && exit 1
-
-usage() {
-    echo
-    echo "usage: $(basename $0)"
-    echo "       -s [path]    sign files "
-    echo "       -u            update packages "
-    echo "       -c            clearing cache "
-    echo "       -h            displays this message "
-    echo
-    exit 1
-}
-
-if [[ -z "$1" ]]; then
-    usage
-    exit 0
-fi
-
-while [ -n "$1" ]; do # while loop starts
-    case "$1" in
-    -s)
-        SIGN_PATH="$2"
-        shift
-        ;;
-    -u)
-        UPDATE="yes"
-        shift
-        ;;
-    -c)
-        CLEARING_CACHE="yes"
-        shift
-        ;;
-    -h) usage
-        ;;
-    --)
-        shift # The double dash makes them parameters
-        break
-        ;;
-     *) usage
-        ;;
-    esac
-    shift
-done
-
 MARCH=$( uname -m )
 if [ -z "$ARCH" ]; then
   case "$MARCH" in
@@ -57,6 +13,7 @@ if [ -z "$ARCH" ]; then
   esac
 fi
 
+VERSION="#VERSION#"
 IRRADIUM_VERSION=${IRRADIUM_VERSION:-"3.7"}
 IRRADIUM_URL="https://dl.irradium.org/irradium/packages/${ARCH}/${IRRADIUM_VERSION}"
 IRRADIUM_CACHE="/var/cache/pkg-get"
@@ -181,20 +138,83 @@ cleaning() {
     exit 0
 }
 
-if [[ ! -z $SIGN_PATH && -d $SIGN_PATH ]]; then
-    sign_files $SIGN_PATH
-fi
+usage() {
+    echo
+    echo "usage: $COMMAND"
+    echo "       -s [path]    sign files "
+    echo "       -u            update packages "
+    echo "       -c            clearing cache "
+    echo "       -h            displays this message "
+    echo
+    exit 1
+}
 
-if [[ ! -z $UPDATE ]]; then
-    check_for_updates
-    prepare_ports "download"
-    prepare_ports "verify"
-fi
+parse_options() {
 
-if [[ ! -z $CLEARING_CACHE ]]; then
-    claering_cache
-fi
+    for OPT in "$@"; do
+        case "$OPT" in
+        -s)
 
-cleaning
+            SIGN_PATH="$2"
+            echo $SIGN_PATH
+            exit 1
+            shift
+            ;;
+        -u)
+            UPDATE="yes"
+            shift
+            ;;
+        -c)
+            CLEARING_CACHE="yes"
+            shift
+            ;;
+        -v|--version)
+            echo "$COMMAND $VERSION"
+            ;;
+        -h) usage
+            ;;
+        --)
+            shift # The double dash makes them parameters
+            break
+            ;;
+         *) usage
+            ;;
+        esac
+        shift
+    done
+}
+
+main() {
+    parse_options "$@"
 
 
+    if [[ -z "$1" ]]; then
+        usage
+        exit 0
+    fi
+
+    [[ $EUID != 0 ]] && echo -e "\nThis script must be run with root privileges\n" && exit 1
+
+
+    if [[ ! -z $SIGN_PATH && -d $SIGN_PATH ]]; then
+        sign_files $SIGN_PATH
+    fi
+
+    if [[ ! -z $UPDATE ]]; then
+        check_for_updates
+        prepare_ports "download"
+        prepare_ports "verify"
+    fi
+
+    if [[ ! -z $CLEARING_CACHE ]]; then
+        claering_cache
+    fi
+
+    cleaning
+}
+
+COMMAND=${0##*/}
+
+main "$@"
+
+# End of file
