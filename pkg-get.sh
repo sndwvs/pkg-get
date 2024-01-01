@@ -9,6 +9,7 @@ usage() {
     echo "usage: $(basename $0)"
     echo "       -s [path]    sign files "
     echo "       -u            update packages "
+    echo "       -c            clearing cache "
     echo "       -h            displays this message "
     echo
     exit 1
@@ -27,6 +28,10 @@ while [ -n "$1" ]; do # while loop starts
         ;;
     -u)
         UPDATE="yes"
+        shift
+        ;;
+    -c)
+        CLEARING_CACHE="yes"
         shift
         ;;
     -h) usage
@@ -161,6 +166,13 @@ prepare_ports() {
     done < $WORK_DIR/ports.diff
 }
 
+claering_cache() {
+    # clean cache directory
+    if [[ -d ${IRRADIUM_CACHE} ]]; then
+        rm -rf ${IRRADIUM_CACHE}/*
+    fi
+}
+
 cleaning() {
     # clean work directory
     if [[ -d ${WORK_DIR} ]]; then
@@ -177,6 +189,10 @@ if [[ ! -z $UPDATE ]]; then
     check_for_updates
     prepare_ports "download"
     prepare_ports "verify"
+fi
+
+if [[ ! -z $CLEARING_CACHE ]]; then
+    claering_cache
 fi
 
 cleaning
