@@ -104,17 +104,11 @@ check_for_updates() {
 verify_sign() {
     local port="$1"
     local pkg="$2"
+    local type="$3"
 
     if [[ -e "${IRRADIUM_CACHE}/${port}/${pkg}.sig" ]]; then
         if [[ ! $($SIGNIFY -p "${SIGNIFY_PATH}/${SIGNIFY_NAME}.pub" -V -x "${IRRADIUM_CACHE}/${port}/${pkg}.sig" -m "${IRRADIUM_CACHE}/${port}/${pkg}" 2>&1 > /dev/null) ]]; then
             echo "OK:  port: ${port}    signature package: ${pkg}"
-            # update package
-#            local pkgadd=$($PKGADD -u "${IRRADIUM_CACHE}/${port}/${pkg}")
-#            if [[ -z $pkgadd ]]; then
-#                echo "OK:  port: ${port}    update package: ${pkg}"
-#            else
-#                echo "ERROR:  port: ${port}    update package: ${pkg}"
-#            fi
             return 0
         else
             echo "ERROR:  port: ${port}    signature package: ${pkg}"
@@ -123,6 +117,27 @@ verify_sign() {
     else
         echo "ERROR:  port: ${port}    signature missing: ${pkg}.sig"
         return 1
+    fi
+}
+
+package_install() {
+    local type="$1"
+
+    if [[ -e "$WORK_DIR/$type" ]]; then
+        while read -r line; do
+            local opt=""
+            if [[ $type == "update" ]]; then
+                opt="-u"
+            fi
+            local pkgadd=$($PKGADD $opt $line)
+            local pkg=$(echo $line | rev | cut -d '/' -f1 | rev)
+            local port=$(echo $line | rev | cut -d '/' -f2 | rev)
+            if [[ -z $pkgadd ]]; then
+                echo "OK:  port: ${port}    $type package: ${pkg}"
+            else
+                echo "ERROR:  port: ${port}    $type package: ${pkg}"
+            fi
+        done < $WORK_DIR/$type
     fi
 }
 
@@ -169,19 +184,20 @@ downloads() {
 }
 
 prepare_ports() {
-    local type="$1"
+    local operation="$1"
+    local type="$2"
 
     if [[ -e "$WORK_DIR/ports.diff" ]]; then
         while read -r line; do
             port=$(echo $line | cut -d ' ' -f1)
             name=$(echo $line | cut -d ' ' -f2)
             version=$(echo $line | cut -d ' ' -f3)
-            if [[ $type == "download" ]]; then
+            if [[ $operation == "download" ]]; then
                 downloads ${port##*-} $name $version
-            elif [[ $type == "verify" ]]; then
+            elif [[ $operation == "verify" ]]; then
                 verify_sign ${port##*-} ${name}'#'${version}${PORT_SUFFIX}
                 if [[ "$?" != 1 ]]; then
-                    echo "${IRRADIUM_CACHE}/${port##*-}/${name}#${version}${PORT_SUFFIX}" >> $WORK_DIR/update
+                    echo "${IRRADIUM_CACHE}/${port##*-}/${name}#${version}${PORT_SUFFIX}" >> $WORK_DIR/$type
                 fi
             fi
         done < $WORK_DIR/ports.diff
@@ -269,14 +285,16 @@ main() {
 
     if [[ $OPT_MODE == "install"  && ! -z ${OPT_COLLECTIONS/[[:space:]]/} ]]; then
         check_install ${OPT_COLLECTIONS/[[:space:]]/}
-        prepare_ports "download"
-        prepare_ports "verify"
+        prepare_ports "download" "$OPT_MODE"
+        prepare_ports "verify" "$OPT_MODE"
+        package_install "$OPT_MODE"
     fi
 
     if [[ $OPT_MODE == "update" ]]; then
         check_for_updates
-        prepare_ports "download"
-        prepare_ports "verify"
+        prepare_ports "download" "$OPT_MODE"
+        prepare_ports "verify" "$OPT_MODE"
+        package_install "$OPT_MODE"
     fi
 
     if [[ $OPT_MODE == "cleaaring_cache" ]]; then
