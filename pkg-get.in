@@ -41,10 +41,10 @@ message() {
     printf '|\e[1;33mwarn\x1B[0m| \e[0;32m%-12s\x1B[0m %s\n' "$ACTION" "$MESSAGE"
 }
 
-gen_packages_install(){
-    local package="$1"
+gen_packages_install() {
+    local packages="$@"
 
-    PACKAGES=( $(echo "$status" | grep -e "^\[\s\].*" | cut -d ']' -f2- | tac -s ' ') )
+    PACKAGES=( $(echo "$packages" | grep -e "^\[\s\].*" | cut -d ']' -f2- | tac -s ' ') )
 
     for pkg in ${PACKAGES[@]}; do
         local package_path=$($PRTGET path $pkg)
@@ -65,11 +65,11 @@ check_install() {
     if [[ $status != *not*installed ]]; then
         echo "$status"
     else
-        status=$($PRTGET deptree $package)
-        if [[ $status == *not*found ]]; then
-            echo "$status"
+        packages=$($PRTGET deptree $package)
+        if [[ $packages == *not*found ]]; then
+            echo "$packages"
         else
-            gen_packages_install "$package"
+            gen_packages_install "$packages"
         fi
     fi
 }
@@ -129,7 +129,7 @@ package_install() {
             if [[ $type == "update" ]]; then
                 opt="-u"
             fi
-            local pkgadd=$($PKGADD $opt $line)
+            local pkgadd=$($PKGADD $opt $line 2>&1 > /dev/null)
             local pkg=$(echo $line | rev | cut -d '/' -f1 | rev)
             local port=$(echo $line | rev | cut -d '/' -f2 | rev)
             if [[ -z $pkgadd ]]; then
