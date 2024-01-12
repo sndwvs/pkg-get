@@ -36,15 +36,35 @@ trap 'cleaning' TERM
 
 
 message() {
-    # parametr 1 - text message
-    MESSAGE="$1"
-    printf '|\e[1;33mwarn\x1B[0m| \e[0;32m%-12s\x1B[0m %s\n' "$ACTION" "$MESSAGE"
+    # parametr 1 - type message
+    #    o: OK
+    #    w: WARN
+    #    e: ERROR
+    # parametr 2 - action message
+    # parametr 3 - text message
+    local type="$1"
+    local action="$2"
+    local message="$3"
+
+    if [[ "$type" == "e" ]]; then
+        type="ERROR:"
+    elif [[ "$type" == "w" ]]; then
+        type="WARN:"
+    elif [[ "$type" == "o" ]]; then
+        type="OK:"
+    fi
+
+    if [[ ! -z "$type" ]]; then
+        printf '%-6s %-12s %s\n' "$type" "$action" "$message"
+    else
+        printf '%-12s %s\n' "$action" "$message"
+    fi
 }
 
 gen_packages_install() {
     local packages="$@"
 
-    PACKAGES=( $(echo "$packages" | grep -e "^\[\s\].*" | cut -d ']' -f2- | tac -s ' ') )
+    PACKAGES=( $(echo "$packages" | grep -e "^\[\s\].*" | cut -d ']' -f2- | tac -s ' ' | xargs -I {} echo {} | uniq) )
 
     for pkg in ${PACKAGES[@]}; do
         local package_path=$($PRTGET path $pkg)
@@ -116,14 +136,14 @@ verify_sign() {
 
     if [[ -e "${IRRADIUM_CACHE}/${port}/${pkg}.sig" ]]; then
         if [[ ! $($SIGNIFY -p "${SIGNIFY_PATH}/${SIGNIFY_NAME}.pub" -V -x "${IRRADIUM_CACHE}/${port}/${pkg}.sig" -m "${IRRADIUM_CACHE}/${port}/${pkg}" 2>&1 > /dev/null) ]]; then
-            echo "OK:  port: ${port}    signature package: ${pkg}"
+            message "o" "signature" "port: ${port}   package: ${pkg}"
             return 0
         else
-            echo "ERROR:  port: ${port}    signature package: ${pkg}"
+            message "e" "signature" "port: ${port}   package: ${pkg}"
             return 1
         fi
     else
-        echo "ERROR:  port: ${port}    signature missing: ${pkg}.sig"
+        message "e" "signature" "port: ${port}   missing: ${pkg}.sig"
         return 1
     fi
 }
@@ -141,9 +161,9 @@ package_install() {
             local pkg=$(echo $line | rev | cut -d '/' -f1 | rev)
             local port=$(echo $line | rev | cut -d '/' -f2 | rev)
             if [[ -z $pkgadd ]]; then
-                echo "OK:  port: ${port}    $type package: ${pkg}"
+                message "o" "$type" "port: ${port}   package: ${pkg}"
             else
-                echo "ERROR:  port: ${port}    $type package: ${pkg}"
+                message "e" "$type" "port: ${port}   package: ${pkg}"
             fi
         done < $WORK_DIR/$type
     fi
@@ -167,26 +187,26 @@ downloads() {
     fi
 
     if [[ -e "${IRRADIUM_CACHE}/${port}/${pkg}" ]]; then
-        echo "Port: ${port}    package in cache: ${pkg}"
+        message "o" "download" "port: ${port}   file in cache: ${pkg}"
     else
         if [[ $($DOWNLOAD -o /dev/null -k --silent -Iw '%{http_code}' $url) == "200" ]]; then
             # download package
             $DOWNLOAD -k -e robots=off -C - --no-clobber $url \
                       -o ${IRRADIUM_CACHE}/${port}/${pkg}
         else
-            echo "ERROR:  port: ${port}    remote file missing: ${pkg}"
+            message "e" "download" "port: ${port}   remote file missing: ${pkg}"
         fi
     fi
 
     if [[ -e "${IRRADIUM_CACHE}/${port}/${pkg}.sig" ]]; then
-        echo "Port: ${port}    signature in cache: ${pkg}.sig"
+        message "o" "download" "port: ${port}   file in cache: ${pkg}.sig"
     else
         if [[ $($DOWNLOAD -o /dev/null -k --silent -Iw '%{http_code}' ${url}.sig) == "200" ]]; then
             # download package
             $DOWNLOAD -k -e robots=off -C - --no-clobber ${url}.sig \
                       -o ${IRRADIUM_CACHE}/${port}/${pkg}.sig
         else
-            echo "ERROR:  port: ${port}    remote file missing: ${pkg}.sig"
+            message "e" "download" "port: ${port}   remote file missing: ${pkg}.sig"
         fi
     fi
 }
