@@ -48,24 +48,32 @@ gen_packages_install() {
 
     for pkg in ${PACKAGES[@]}; do
         local package_path=$($PRTGET path $pkg)
-        local port=$(echo $package_path | rev | cut -d '/' -f2 | rev)
-        local version=$(source $package_path/Pkgfile ; echo $version)
-        local release=$(source $package_path/Pkgfile ; echo $release)
-        if [[ ! -z ${version} ]]; then
-            echo $port $pkg ${version}-${release} >> $WORK_DIR/ports.diff
+        if [[ -e $package_path/Pkgfile ]]; then
+            local port=$(echo $package_path | rev | cut -d '/' -f2 | rev)
+            local version=$(source $package_path/Pkgfile ; echo $version)
+            local release=$(source $package_path/Pkgfile ; echo $release)
+            if [[ ! -z ${version} ]]; then
+                echo $port $pkg ${version}-${release} >> $WORK_DIR/ports.diff
+            fi
         fi
     done
 }
 
 check_install() {
     local package="$1"
+    local type="$2"
 
     status=$($PRTGET isinst $package)
 
     if [[ $status != *not*installed ]]; then
         echo "$status"
     else
-        packages=$($PRTGET deptree $package)
+        if [[ $type == "depinst" ]]; then
+            packages=$($PRTGET deptree $package)
+        fi
+        if [[ -z $packages ]]; then
+            packages=("[ ] $package")
+        fi
         if [[ $packages == *not*found ]]; then
             echo "$packages"
         else
@@ -283,8 +291,8 @@ main() {
         sign_files ${OPT_COLLECTIONS/[[:space:]]/}
     fi
 
-    if [[ $OPT_MODE == "install"  && ! -z ${OPT_COLLECTIONS/[[:space:]]/} ]]; then
-        check_install ${OPT_COLLECTIONS/[[:space:]]/}
+    if [[ ( $OPT_MODE == "install"  || $OPT_MODE == "depinst" ) && ! -z ${OPT_COLLECTIONS/[[:space:]]/} ]]; then
+        check_install ${OPT_COLLECTIONS/[[:space:]]/} $OPT_MODE
         prepare_ports "download" "$OPT_MODE"
         prepare_ports "verify" "$OPT_MODE"
         package_install "$OPT_MODE"
