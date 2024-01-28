@@ -18,7 +18,7 @@ all: pkg-get
 install: all
 	install -D -m0755 pkg-get $(DESTDIR)$(BINDIR)/pkg-get
 #	install -D -m0644 pkg-get.8 $(DESTDIR)$(MANDIR)/man8/pkg-get.8
-	install -d $(DESTDIR)$(ETCDIR)/pkg-get.pub
+	install -D -m0644 pkg-get.pub $(DESTDIR)$(ETCDIR)/pkg-get.pub
 	install -d $(DESTDIR)$(CACHEDIR)
 
 dist: clean
