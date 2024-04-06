@@ -1,0 +1,15 @@
+# mirrors - list of irradium linux mirrors.
+#
+# You only need to select one mirror and uncomment it.
+# ONLY ONE mirror can be uncommented.
+#
+#----------------------------------------------------------------
+# irradium 3.7
+#----------------------------------------------------------------
+# https://dl.irradium.org/irradium/packages/ARCH/3.7
+#
+#----------------------------------------------------------------
+# irradium 3.8
+#----------------------------------------------------------------
+# https://dl.irradium.org/irradium/packages/ARCH/3.8
+#

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export LANG=C
+export LANG=C.UTF-8
 
 MARCH=$( uname -m )
 if [ -z "$ARCH" ]; then
@@ -14,8 +14,12 @@ if [ -z "$ARCH" ]; then
 fi
 
 VERSION="#VERSION#"
-IRRADIUM_VERSION=${IRRADIUM_VERSION:-"3.7"}
-IRRADIUM_URL="https://dl.irradium.org/irradium/packages/${ARCH}/${IRRADIUM_VERSION}"
+IRRADIUM_VERSION=${IRRADIUM_VERSION:-$(irradium | cut -d ' ' -f3)}
+MIRRORS=${MIRRORS:-"/etc/pkg-get/mirrors"}
+if [ -e ${MIRRORS} ]; then
+    IRRADIUM_URL=$(grep -v '^#' ${MIRRORS} | grep "${IRRADIUM_VERSION}" | tr -d ' \t' | sed "s:ARCH:${ARCH}:g")
+fi
+IRRADIUM_URL=${IRRADIUM_URL:-"https://dl.irradium.org/irradium/packages/${ARCH}/${IRRADIUM_VERSION}"}
 IRRADIUM_CACHE="/var/cache/pkg-get"
 PORTS="/usr/bin/ports"
 DOWNLOAD="/usr/bin/curl"

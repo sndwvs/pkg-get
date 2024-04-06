@@ -5,7 +5,7 @@ MANDIR	 = /usr/share/man
 ETCDIR	 = /etc/pkg-get
 CACHEDIR = /var/cache/pkg-get
 
-VERSION  = 0.1
+VERSION  = 0.1.1
 
 #all: pkg-get pkg-get.8
 all: pkg-get
@@ -19,6 +19,7 @@ install: all
 	install -D -m0755 pkg-get $(DESTDIR)$(BINDIR)/pkg-get
 #	install -D -m0644 pkg-get.8 $(DESTDIR)$(MANDIR)/man8/pkg-get.8
 	install -D -m0644 pkg-get.pub $(DESTDIR)$(ETCDIR)/pkg-get.pub
+	install -D -m0644 mirrors $(DESTDIR)$(ETCDIR)/mirrors
 	install -d $(DESTDIR)$(CACHEDIR)
 
 dist: clean
