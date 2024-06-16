@@ -68,7 +68,7 @@ message() {
 gen_packages_install() {
     local packages="$@"
 
-    PACKAGES=( $(echo "$packages" | grep -e "^\[\s\].*" | cut -d ']' -f2- | tac -s ' ' | sed 's:-->::g' | sed 's:\s:\n:g' | sort | uniq | xargs -I {} echo {}) )
+    PACKAGES=( $(echo "$packages" | grep -e "^\[\s\].*" | cut -d ']' -f2- | sed 's:\s-->$\|\s(.*$::g' | tac -s ' ' | sort | uniq | xargs -I {} echo {}) )
 
     for pkg in ${PACKAGES[@]}; do
         local package_path=$($PRTGET path $pkg)
