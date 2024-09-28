@@ -22,6 +22,7 @@ fi
 IRRADIUM_URL=${IRRADIUM_URL:-"https://dl.irradium.org/irradium/packages/${ARCH}/${IRRADIUM_VERSION}"}
 IRRADIUM_CACHE="/var/cache/pkg-get"
 PORTS="/usr/bin/ports"
+PORTS_PATH="/usr/ports"
 DOWNLOAD="/usr/bin/curl"
 SIGNIFY="/usr/bin/signify"
 SIGNIFY_PATH=${SIGNIFY_PATH:-"/etc/pkg-get"}
@@ -163,8 +164,19 @@ package_install() {
             fi
             local pkgadd=$($PKGADD $opt $line 2>&1 > /dev/null)
             local pkg=$(echo $line | rev | cut -d '/' -f1 | rev)
+            local pkgname=$(echo $pkg | cut -d '#' -f1)
             local port=$(echo $line | rev | cut -d '/' -f2 | rev)
+            local portdir
             if [[ -z $pkgadd ]]; then
+                if [[ -f "$PORTS_PATH/irradium-$port/$pkgname/post-install" ]]; then
+                    portdir="$PORTS_PATH/irradium-$port/$pkgname/post-install"
+                elif [[ -f "$PORTS_PATH/$port/$pkgname/post-install" ]]; then
+                    portdir="$PORTS_PATH/$port/$pkgname/post-install"
+                fi
+                if [[ ! -z $portdir ]]; then
+                    sh "$portdir" 2>$1>/dev/null
+                    unset portdir
+                fi
                 message "o" "$type" "port: ${port}   package: ${pkg}"
             else
                 message "e" "$type" "port: ${port}   package: ${pkg}"
