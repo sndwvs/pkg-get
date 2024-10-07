@@ -5,7 +5,7 @@ MANDIR	 = /usr/share/man
 ETCDIR	 = /etc/pkg-get
 CACHEDIR = /var/cache/pkg-get
 
-VERSION  = 0.1.5
+VERSION  = 0.1.6
 
 #all: pkg-get pkg-get.8
 all: pkg-get

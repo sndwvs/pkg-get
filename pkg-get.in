@@ -69,7 +69,7 @@ message() {
 gen_packages_install() {
     local packages="$@"
 
-    PACKAGES=( $(echo "$packages" | grep -e "^\[\s\].*" | cut -d ']' -f2- | grep -v "\-->" | tac -s ' ' | sort | uniq | xargs -I {} echo {}) )
+    PACKAGES=( $(echo "$packages" | grep -e "^\[\s\].*" | cut -d ']' -f2- | tac -s ' ' | tac | uniq | xargs -I {} echo {}) )
 
     for pkg in ${PACKAGES[@]}; do
         local package_path=$($PRTGET path $pkg)
@@ -94,7 +94,7 @@ check_install() {
         echo "$status"
     else
         if [[ $type == "depinst" ]]; then
-            packages=$($PRTGET deptree $package)
+            packages=$($PRTGET depends $package)
         fi
         if [[ -z $packages ]]; then
             packages=("[ ] $package")
