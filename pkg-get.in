@@ -174,7 +174,8 @@ package_install() {
                     portdir="$PORTS_PATH/$port/$pkgname/post-install"
                 fi
                 if [[ ! -z $portdir ]]; then
-                    sh "$portdir" 2>$1>/dev/null
+                    chmod +x "$portdir"
+                    bash -c "$portdir" 2>/dev/null
                     unset portdir
                 fi
                 message "o" "$type" "port: ${port}   package: ${pkg}"
