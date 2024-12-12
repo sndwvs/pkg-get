@@ -208,7 +208,7 @@ downloads() {
     else
         if [[ $($DOWNLOAD -o /dev/null -k --silent -Iw '%{http_code}' $url) == "200" ]]; then
             # download package
-            $DOWNLOAD -k -e robots=off -C - --no-clobber $url \
+            $DOWNLOAD -k -e robots=off -C - $url \
                       -o ${IRRADIUM_CACHE}/${port}/${pkg}
         else
             message "e" "download" "port: ${port}   remote file missing: ${pkg}"
@@ -220,7 +220,7 @@ downloads() {
     else
         if [[ $($DOWNLOAD -o /dev/null -k --silent -Iw '%{http_code}' ${url}.sig) == "200" ]]; then
             # download package
-            $DOWNLOAD -k -e robots=off -C - --no-clobber ${url}.sig \
+            $DOWNLOAD -k -e robots=off -C - ${url}.sig \
                       -o ${IRRADIUM_CACHE}/${port}/${pkg}.sig
         else
             message "e" "download" "port: ${port}   remote file missing: ${pkg}.sig"
